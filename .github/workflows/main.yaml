@@ -1,0 +1,36 @@
+name: build
+
+on:
+  push:
+    tags:
+      - '*.*.*'
+
+env:
+  APP_NAME: 'x11-keyboard-flags'
+  APP_MAINTAINER: 'jonathas'
+  APP_DESC: 'X11 Keyboard layout indicator as country flags.'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: create sample script
+        run: |
+          mkdir -p .debpkg/usr/lib/x11-keyboard-flags
+          cp ./flags.json ./main.py .debpkg/usr/lib/x11-keyboard-flags/
+
+          # create DEBIAN directory if you want to add other pre/post scripts
+          mkdir -p .debpkg/DEBIAN
+          echo -e "python3 /usr/lib/x11-keyboard-flags/main.py" > .debpkg/DEBIAN/postinst
+          chmod +x .debpkg/DEBIAN/postinst
+      - uses: jiro4989/build-deb-action@v2
+        with:
+          package: ${{ env.APP_NAME }}
+          package_root: .debpkg
+          maintainer: ${{ env.APP_MAINTAINER }}
+          version: ${{ github.ref }} # refs/tags/*.*.*
+          arch: 'amd64'
+          depends: 'python, xkeyboard-config'
+          desc: ${{ env.APP_DESC }}
